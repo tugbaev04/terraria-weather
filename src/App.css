@@ -1,0 +1,25 @@
+.regular {
+    font-family: "Press Start 2P", system-ui;
+    font-weight: 400;
+    font-size: 13px;
+    font-style: normal;
+}
+
+.bold {
+    font-family: "Press Start 2P", system-ui;
+    font-weight: 800;
+    font-size: 40px;
+    font-style: normal;
+}
+
+.header-text {
+    text-shadow: 0 5px #C77931;
+}
+
+
+.card-footer img {
+    max-width: 64px;
+    max-height: 64px;
+    object-fit: contain;
+}
+

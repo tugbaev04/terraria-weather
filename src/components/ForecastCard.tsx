@@ -1,0 +1,23 @@
+import React from 'react';
+
+interface ForecastCardProps {
+    day: string,
+    iconSrc: string,
+    max?: number,
+    min?: number
+}
+
+const ForecastCard: React.FC<ForecastCardProps> = ({ day, iconSrc, min, max }) => {
+    return (
+        <div className="five-card flex items-center justify-between w-full gap-4">
+            <div className="text-sm text-left w-16">{day}</div>
+            <div className="flex-shrink-0">
+                <img src={iconSrc} alt={day} className="w-8 h-8 object-contain"/>
+            </div>
+            <div className="text-sm text-blue-100 w-10 text-center">{min}°</div>
+            <div className="text-sm w-10 text-center">{max}°</div>
+        </div>
+    );
+};
+
+export default ForecastCard;
