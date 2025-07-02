@@ -1,54 +1,60 @@
-# React + TypeScript + Vite
+# 🌦️ Weather App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Weather App** — это современное погодное приложение, написанное на React с использованием API Open-Meteo. Оно предоставляет актуальную информацию о погоде на сегодня и 5-дневный прогноз для выбранного города, а также позволяет сохранять избранные локации и переключаться между градусами Цельсия и Фаренгейта.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Поиск города по названию
+- Отображение текущей погоды: температура, иконка, описание
+- 5-дневный прогноз
+- Добавление городов в избранное
+- Переключатель температуры: °C / °F
+- Локальное сохранение избранных через `localStorage`
+- Эстетичный UI с использованием TailwindCSS
 
-## Expanding the ESLint configuration
+## Технологии
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **React**
+- **TypeScript**
+- **Open-Meteo API**
+- **Tailwind CSS**
+- **date-fns**
+- **LocalStorage API**
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Структура проекта
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+src/
+├── components/
+│   ├── ForecastCard.tsx
+│   ├── FavoritesManager.tsx
+│   ├── SearchBar.tsx
+│   └── TemperatureToggle.tsx
+├── assets/
+│   ├── images-icon/
+│   └── images-bg/
+├── App.tsx
+├── App.css
+└── index.tsx
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Установка
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+1. **Клонируй репозиторий:**
+
+```bash
+git clone https://github.com/твой-юзернейм/weather-app.git
+cd weather-app
+
+npm install
+# или
+yarn install
+
+http://localhost:5173/
+
+Этот проект не требует ключа API, так как Open-Meteo предоставляет открытые данные.
+
+### Что нужно сделать дополнительно:
+
+1. Заменить `твой-юзернейм` на свой GitHub логин.
+2. Добавить `screenshot.png` в корень проекта или в `public/`, чтобы показать интерфейс.
+3. При желании, подключить бейджи (Vercel, License, etc.).
+4. Убедиться, что в `.gitignore` указан `node_modules`.

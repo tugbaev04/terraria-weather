@@ -4,7 +4,8 @@ interface ForecastCardProps {
     day: string,
     iconSrc: string,
     max?: number,
-    min?: number
+    min?: number,
+    unit?: string
 }
 
 const ForecastCard: React.FC<ForecastCardProps> = ({ day, iconSrc, min, max }) => {

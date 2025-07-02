@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import ForecastCard from "./components/ForecastCard.tsx";
 import SearchBar from "./components/SearchBar.tsx";
 import TemperatureToggle from "./components/TemperatureToggle.tsx";
-import FavoritesManager from "./components/FavoritesManager.tsx";
 
 import sun from './assets/images-icon/Sunny.png';
 import cloudy from './assets/images-icon/Cloudy.png';
@@ -40,8 +39,6 @@ interface Location {
     name: string;
 }
 
-type TemperatureUnit = 'celsius' | 'fahrenheit';
-
 function App() {
     const [forecast, setForecast] = useState<ForecastData | null>(null);
     const [current, setCurrent] = useState<CurrentData>({
@@ -56,11 +53,10 @@ function App() {
         lon: 24.94,
         name: "Helsinki, Finland"
     });
-    const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('celsius');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchForecast = async (lat: number, lon: number, unit: TemperatureUnit = temperatureUnit) => {
+    const fetchForecast = async (lat: number, lon: number) => {
         try {
             setLoading(true);
             setError(null);
@@ -71,7 +67,6 @@ function App() {
                 daily: "temperature_2m_max,temperature_2m_min,weathercode",
                 current: "temperature_2m,weathercode,windspeed_10m,surface_pressure,relativehumidity_2m",
                 timezone: "auto",
-                temperature_unit: unit === 'fahrenheit' ? 'fahrenheit' : 'celsius',
             };
 
             const url = "https://api.open-meteo.com/v1/forecast";
@@ -131,24 +126,15 @@ function App() {
 
     // Initial load
     useEffect(() => {
-        void fetchForecast(location.lat, location.lon, temperatureUnit);
+        void fetchForecast(location.lat, location.lon);
     }, []);
 
     // Handle city selection from search
     const handleCitySelect = (lat: number, lon: number, cityName: string) => {
         const newLocation = { lat, lon, name: cityName };
         setLocation(newLocation);
-        void fetchForecast(lat, lon, temperatureUnit);
+        void fetchForecast(lat, lon);
     };
-
-    // Handle temperature unit change
-    const handleTemperatureToggle = (unit: TemperatureUnit) => {
-        setTemperatureUnit(unit);
-        void fetchForecast(location.lat, location.lon, unit);
-    };
-
-    // Helper function to get unit symbol
-    const getUnitSymbol = () => temperatureUnit === 'fahrenheit' ? '°F' : '°C';
 
     const getIconByCode = (code: number | null): string => {
         if (code === null) return sun;
@@ -199,7 +185,6 @@ function App() {
                     iconSrc={icon}
                     min={min}
                     max={max}
-                    unit={getUnitSymbol()}
                 />
             );
         }).filter(Boolean);
@@ -245,26 +230,11 @@ function App() {
 
             <div className="content text-center regular min-h-screen flex flex-col items-center justify-center px-4">
                 {/* Search Bar */}
-
-                <TemperatureToggle
-                    unit={temperatureUnit}
-                    onToggle={handleTemperatureToggle}
-                    disabled={loading}
-                />
-
-                <FavoritesManager
-                    currentLocation={location}
-                    onCitySelect={handleCitySelect}
-                />
-
-
                 <SearchBar
                     onCitySelect={handleCitySelect}
                     currentCity={location.name}
                     isLoading={loading}
                 />
-
-
 
                 <div className="card-wrapper w-[340px] sm:w-[480px] flex flex-col bg-[#2e1e12]/70 backdrop-blur-sm rounded-xl shadow-inner-glow border border-[#a36b2b]/40">
                     <div className="card-header bold p-9 text-[#F8E3B6]">
