@@ -1,136 +1,121 @@
-import React, { useState, useEffect } from 'react';
+// src/components/FavoritesManager.tsx
 
-interface FavoriteCity {
-    name: string;
-    lat: number;
-    lon: number;
-}
+import { useState, useEffect } from 'react';
+import type {Location} from '../types/WeatherTypes'; // Предполагается, что тип Location определен здесь
+// Предполагается, что тип Location определен здесь
+import FavoriteCitiesList from './FavoriteCitiesList'; // Импорт дочернего компонента
 
+// Определяем интерфейс для пропсов один раз
 interface FavoritesManagerProps {
-    currentLocation: { name: string; lat: number; lon: number };
+    currentLocation: Location;
     onCitySelect: (lat: number, lon: number, cityName: string) => void;
 }
 
+// Константа для ключа в localStorage для избежания "магических строк"
+const FAVORITES_STORAGE_KEY = 'weather-app-favorites';
+
 const FavoritesManager: React.FC<FavoritesManagerProps> = ({ currentLocation, onCitySelect }) => {
-    const [favorites, setFavorites] = useState<FavoriteCity[]>([]);
+    // Состояние для хранения списка избранных городов
+    const [favorites, setFavorites] = useState<Location[]>([]);
+    // Состояние для контроля видимости списка избранного
     const [showFavorites, setShowFavorites] = useState(false);
 
-    // Load favorites from localStorage on component mount
+    // Эффект для загрузки избранных городов из localStorage при монтировании компонента
     useEffect(() => {
-        const savedFavorites = localStorage.getItem('weather-favorites');
+        const savedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
         if (savedFavorites) {
             try {
-                const parsed = JSON.parse(savedFavorites);
-                setFavorites(Array.isArray(parsed) ? parsed : []);
+                const parsedFavorites = JSON.parse(savedFavorites);
+                // Проверяем, что загруженные данные - это массив
+                if (Array.isArray(parsedFavorites)) {
+                    setFavorites(parsedFavorites);
+                }
             } catch (error) {
                 console.error('Error parsing favorites from localStorage:', error);
-                setFavorites([]);
+                setFavorites([]); // В случае ошибки устанавливаем пустой массив
             }
         }
-    }, []);
+    }, []); // Пустой массив зависимостей означает, что эффект выполнится один раз
 
-    // Save favorites to localStorage whenever favorites change
+    // Эффект для сохранения избранных в localStorage при каждом их изменении
     useEffect(() => {
-        localStorage.setItem('weather-favorites', JSON.stringify(favorites));
-    }, [favorites]);
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+    }, [favorites]); // Зависимость от 'favorites'
 
+    // Функция для проверки, находится ли текущий город в избранном
+    // Используем допуск (epsilon) для сравнения float-чисел, что более надежно
+    const isCurrentLocationFavorite = favorites.some(
+        fav =>
+            Math.abs(fav.lat - currentLocation.lat) < 0.01 &&
+            Math.abs(fav.lon - currentLocation.lon) < 0.01
+    );
+
+    // Функция для добавления текущего города в избранное
     const addToFavorites = () => {
-        const newFavorite: FavoriteCity = {
-            name: currentLocation.name,
-            lat: currentLocation.lat,
-            lon: currentLocation.lon
-        };
-
-        // Check if already in favorites
-        const isAlreadyFavorite = favorites.some(
-            fav => Math.abs(fav.lat - newFavorite.lat) < 0.01 && Math.abs(fav.lon - newFavorite.lon) < 0.01
-        );
-
-        if (!isAlreadyFavorite) {
-            setFavorites(prev => [...prev, newFavorite]);
+        if (!isCurrentLocationFavorite) {
+            setFavorites(prevFavorites => [...prevFavorites, currentLocation]);
         }
     };
 
-    const removeFromFavorites = (cityToRemove: FavoriteCity) => {
-        setFavorites(prev => prev.filter(
-            fav => !(Math.abs(fav.lat - cityToRemove.lat) < 0.01 && Math.abs(fav.lon - cityToRemove.lon) < 0.01)
-        ));
-    };
-
-    const isCurrentCityFavorite = () => {
-        return favorites.some(
-            fav => Math.abs(fav.lat - currentLocation.lat) < 0.01 && Math.abs(fav.lon - currentLocation.lon) < 0.01
+    // Функция для удаления города из избранного
+    const removeFromFavorites = (locationToRemove: Location) => {
+        setFavorites(prevFavorites =>
+            prevFavorites.filter(
+                fav =>
+                    !(Math.abs(fav.lat - locationToRemove.lat) < 0.01 &&
+                        Math.abs(fav.lon - locationToRemove.lon) < 0.01)
+            )
         );
     };
 
-    const handleFavoriteClick = (favorite: FavoriteCity) => {
-        onCitySelect(favorite.lat, favorite.lon, favorite.name);
-        setShowFavorites(false);
+    // Функция для выбора города из списка избранных
+    const selectCity = (location: Location) => {
+        onCitySelect(location.lat, location.lon, location.name);
+        setShowFavorites(false); // Скрываем список после выбора
     };
 
     return (
-        <div className="relative mb-4">
-            <div className="flex items-center gap-2 justify-center">
-                {/* Add to favorites button */}
+        <>
+            <div className="flex gap-2 mb-4">
+                {/* Кнопка для отображения списка избранных */}
                 <button
-                    onClick={addToFavorites}
-                    disabled={isCurrentCityFavorite()}
-                    className={`
-                        flex items-center gap-2 px-4 py-2 rounded-lg text-sm regular transition-all duration-200
-                        ${isCurrentCityFavorite()
-                        ? 'bg-yellow-500/30 text-yellow-300 cursor-not-allowed'
-                        : 'bg-white/20 hover:bg-white/30 text-white border border-white/30'
-                    }
-                    `}
-                    title={isCurrentCityFavorite() ? 'Already in favorites' : 'Add to favorites'}
+                    onClick={() => setShowFavorites(true)}
+                    className="flex items-center gap-1 px-3 py-2 bg-[#2e1e12]/70 backdrop-blur-sm rounded-xl shadow-inner-glow border border-[#a36b2b]/40 text-white/90 hover:text-white"
                 >
-                    <span className={isCurrentCityFavorite() ? 'text-yellow-300' : 'text-white'}>
-                        ★
-                    </span>
-                    {isCurrentCityFavorite() ? 'In Favorites' : 'Add to Favorites'}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <span className="text-xs regular">Favorites ({favorites.length})</span>
                 </button>
 
-                {/* Show favorites button */}
-                {favorites.length > 0 && (
-                    <button
-                        onClick={() => setShowFavorites(!showFavorites)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white border border-white/30 text-sm regular transition-all duration-200"
-                    >
-                        <span>📍</span>
-                        Favorites ({favorites.length})
-                    </button>
-                )}
+                {/* Кнопка для добавления в избранное */}
+                <button
+                    onClick={addToFavorites}
+                    disabled={isCurrentLocationFavorite}
+                    className={`flex items-center gap-1 px-3 py-2 backdrop-blur-sm rounded-xl shadow-inner-glow border text-white/90 hover:text-white transition-all ${
+                        isCurrentLocationFavorite
+                            ? 'bg-[#4f372a]/70 border-[#a36b2b]/40 opacity-50 cursor-not-allowed'
+                            : 'bg-[#2e1e12]/70 border-[#a36b2b]/40'
+                    }`}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill={isCurrentLocationFavorite ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <span className="text-xs regular">
+                        {isCurrentLocationFavorite ? 'Favorited' : 'Add to Favorites'}
+                    </span>
+                </button>
             </div>
 
-            {/* Favorites dropdown */}
-            {showFavorites && favorites.length > 0 && (
-                <div className="absolute z-20 w-full mt-2 bg-white/90 backdrop-blur-md rounded-xl border border-white/30 shadow-lg max-h-60 overflow-y-auto">
-                    <div className="p-2">
-                        <div className="text-gray-800 font-semibold text-sm mb-2 regular">Favorite Cities</div>
-                        {favorites.map((favorite, index) => (
-                            <div
-                                key={`${favorite.lat}-${favorite.lon}-${index}`}
-                                className="flex items-center justify-between p-2 hover:bg-white/30 rounded-lg group"
-                            >
-                                <button
-                                    onClick={() => handleFavoriteClick(favorite)}
-                                    className="flex-1 text-left text-gray-800 hover:text-gray-900 regular text-sm"
-                                >
-                                    {favorite.name}
-                                </button>
-                                <button
-                                    onClick={() => removeFromFavorites(favorite)}
-                                    className="opacity-0 group-hover:opacity-100 ml-2 text-red-500 hover:text-red-700 transition-opacity duration-200"
-                                    title="Remove from favorites"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
+            {/* Модальное окно или список избранных городов */}
+            <FavoriteCitiesList
+                favorites={favorites}
+                onSelect={selectCity}
+                onRemove={removeFromFavorites}
+                showFavorites={showFavorites}
+                onClose={() => setShowFavorites(false)}
+            />
+        </>
     );
 };
 

@@ -282,7 +282,7 @@ function App() {
                                 <img src={forecast && forecast.weathercode.length > 0 ? getIconByCode(forecast.weathercode[0]) : sun} alt="weather icon" />
                             </div>
                             <div className="today-temp text-3xl">
-                                {forecast && forecast.temperatureMax.length > 0 ? Math.floor(forecast.temperatureMax[0]) + "°C" : "--"}
+                                {forecast && forecast.temperatureMax.length > 0 ? Math.floor(forecast.temperatureMax[0]) + getUnitSymbol() : "--"}
                             </div>
                             <div className="today-style text-xl">
                                 {forecast && forecast.weathercode.length > 0 ? getDescriptionByCode(forecast.weathercode[0]) : "--"}

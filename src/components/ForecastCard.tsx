@@ -8,15 +8,17 @@ interface ForecastCardProps {
     unit?: string
 }
 
-const ForecastCard: React.FC<ForecastCardProps> = ({ day, iconSrc, min, max }) => {
+const ForecastCard: React.FC<ForecastCardProps> = ({ day, iconSrc, min, max, unit = '°C' }) => {
+    const unitSymbol = unit.includes('°') ? unit : `°${unit}`;
+    
     return (
         <div className="five-card flex items-center justify-between w-full gap-4">
             <div className="text-sm text-left w-16">{day}</div>
             <div className="flex-shrink-0">
                 <img src={iconSrc} alt={day} className="w-8 h-8 object-contain"/>
             </div>
-            <div className="text-sm text-blue-100 w-10 text-center">{min}°</div>
-            <div className="text-sm w-10 text-center">{max}°</div>
+            <div className="text-sm text-blue-100 w-10 text-center">{min}{unitSymbol.charAt(0)}</div>
+            <div className="text-sm w-10 text-center">{max}{unitSymbol.charAt(0)}</div>
         </div>
     );
 };
