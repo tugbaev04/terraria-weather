@@ -19,12 +19,14 @@ import windIcon from './assets/images-icon/Wind.png';
 import pressureIcon from './assets/images-icon/Pressure.png';
 
 import { useWeather } from './hooks/useWeather';
+import { useFavorites } from './hooks/useFavorites';
 import type { TemperatureUnit } from './types/WeatherTypes';
 
 const initialLocation = { lat: 60.17, lon: 24.94, name: 'Helsinki, Finland' };
 
 function App() {
     const { forecast, current, location, temperatureUnit, loading, error, setLocation, toggleUnit } = useWeather(initialLocation, 'celsius');
+    const { favorites, add: addFavorite, remove: removeFavorite } = useFavorites();
 
     const getUnitSymbol = () => temperatureUnit === 'fahrenheit' ? '°F' : '°C';
 
@@ -110,7 +112,13 @@ function App() {
             <div className="content text-center font-normal min-h-screen flex flex-col items-center justify-center px-4">
                 <TemperatureToggle unit={temperatureUnit as TemperatureUnit} onToggle={toggleUnit} disabled={loading} />
 
-                <FavoritesManager currentLocation={location} onCitySelect={(lat, lon, name) => setLocation(lat, lon, name)} />
+                <FavoritesManager
+                    currentLocation={location}
+                    onCitySelect={(lat, lon, name) => setLocation(lat, lon, name)}
+                    favorites={favorites}
+                    onAddFavorite={(city) => addFavorite(city)}
+                    onRemoveFavorite={(city) => removeFavorite(city)}
+                />
 
                 <SearchBar onCitySelect={(lat, lon, name) => setLocation(lat, lon, name)} currentCity={location.name} isLoading={loading} />
 
