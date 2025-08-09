@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { fetchWeatherApi } from 'openmeteo';
+import React from 'react';
 import { format } from 'date-fns';
 
-import ForecastCard from "./components/ForecastCard.tsx";
-import SearchBar from "./components/SearchBar.tsx";
-import TemperatureToggle from "./components/TemperatureToggle.tsx";
-import FavoritesManager from "./components/FavoritesManager.tsx";
+import './App.css';
+
+import ForecastCard from './components/ForecastCard';
+import SearchBar from './components/SearchBar';
+import TemperatureToggle from './components/TemperatureToggle';
+import FavoritesManager from './components/FavoritesManager';
 
 import sun from './assets/images-icon/Sunny.png';
 import cloudy from './assets/images-icon/Cloudy.png';
@@ -13,141 +14,18 @@ import cloudyRain from './assets/images-icon/Cloudy-Rain.png';
 import cloudySun from './assets/images-icon/Cloudy-sun.png';
 
 import bg from './assets/images-bg/a2ef6a7efb78115ce3ab19da1c0938a888c3cd1f8b480d921421dbc666ac44b5.png';
+import humidityIcon from './assets/images-icon/Humidity.png';
+import windIcon from './assets/images-icon/Wind.png';
+import pressureIcon from './assets/images-icon/Pressure.png';
 
-import './App.css';
-import humidityIcon from "./assets/images-icon/Humidity.png";
-import windIcon from "./assets/images-icon/Wind.png";
-import pressureIcon from "./assets/images-icon/Pressure.png";
+import { useWeather } from './hooks/useWeather';
+import type { TemperatureUnit } from './types/WeatherTypes';
 
-interface ForecastData {
-    time: Date[];
-    temperatureMin: number[];
-    temperatureMax: number[];
-    weathercode: number[];
-}
-
-interface CurrentData {
-    temperature: number | null;
-    weathercode: number | null;
-    wind: number | null;
-    pressure: number | null;
-    humidity: number | null;
-}
-
-interface Location {
-    lat: number;
-    lon: number;
-    name: string;
-}
-
-type TemperatureUnit = 'celsius' | 'fahrenheit';
+const initialLocation = { lat: 60.17, lon: 24.94, name: 'Helsinki, Finland' };
 
 function App() {
-    const [forecast, setForecast] = useState<ForecastData | null>(null);
-    const [current, setCurrent] = useState<CurrentData>({
-        temperature: null,
-        weathercode: null,
-        wind: null,
-        pressure: null,
-        humidity: null
-    });
-    const [location, setLocation] = useState<Location>({
-        lat: 60.17,
-        lon: 24.94,
-        name: "Helsinki, Finland"
-    });
-    const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('celsius');
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { forecast, current, location, temperatureUnit, loading, error, setLocation, toggleUnit } = useWeather(initialLocation, 'celsius');
 
-    const fetchForecast = async (lat: number, lon: number, unit: TemperatureUnit = temperatureUnit) => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            const params = {
-                latitude: lat,
-                longitude: lon,
-                daily: "temperature_2m_max,temperature_2m_min,weathercode",
-                current: "temperature_2m,weathercode,windspeed_10m,surface_pressure,relativehumidity_2m",
-                timezone: "auto",
-                temperature_unit: unit === 'fahrenheit' ? 'fahrenheit' : 'celsius',
-            };
-
-            const url = "https://api.open-meteo.com/v1/forecast";
-            const responses = await fetchWeatherApi(url, params);
-            const response = responses[0];
-
-            const daily = response.daily();
-            const currentWeather = response.current();
-
-            if (!daily || !currentWeather) {
-                throw new Error('Failed to get weather data');
-            }
-
-            const utcOffsetSeconds = response.utcOffsetSeconds();
-
-            const time = [...Array(Math.floor((Number(daily.timeEnd()) - Number(daily.time())) / daily.interval()))].map(
-                (_, i) => new Date((Number(daily.time()) + i * daily.interval() + utcOffsetSeconds) * 1000)
-            );
-
-            const temperatureMaxArray = daily.variables(0)?.valuesArray();
-            const temperatureMinArray = daily.variables(1)?.valuesArray();
-            const weathercodeArray = daily.variables(2)?.valuesArray();
-
-            const weatherData: ForecastData = {
-                time,
-                temperatureMin: temperatureMinArray ? Array.from(temperatureMinArray) : [],
-                temperatureMax: temperatureMaxArray ? Array.from(temperatureMaxArray) : [],
-                weathercode: weathercodeArray ? Array.from(weathercodeArray) : [],
-            };
-
-            const currentTemp = currentWeather.variables(0)?.value();
-            const currentWeatherCode = currentWeather.variables(1)?.value();
-            const currentWind = currentWeather.variables(2)?.value();
-            const currentPressure = currentWeather.variables(3)?.value();
-            const currentHumidity = currentWeather.variables(4)?.value();
-
-            const currentData: CurrentData = {
-                temperature: currentTemp !== undefined ? Math.floor(currentTemp) : null,
-                weathercode: currentWeatherCode ?? null,
-                wind: currentWind !== undefined ? Math.floor(currentWind) : null,
-                pressure: currentPressure !== undefined ? Math.floor(currentPressure) : null,
-                humidity: currentHumidity !== undefined ? Math.floor(currentHumidity) : null,
-            };
-
-            console.log('Weather Data:', weatherData);
-            console.log('Current Data:', currentData);
-
-            setForecast(weatherData);
-            setCurrent(currentData);
-        } catch (err) {
-            console.error('Error fetching weather data:', err);
-            setError('Failed to load weather data');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Initial load
-    useEffect(() => {
-        void fetchForecast(location.lat, location.lon, temperatureUnit);
-    }, []);
-
-    // Handle city selection from search
-    const handleCitySelect = (lat: number, lon: number, cityName: string) => {
-        const newLocation = { lat, lon, name: cityName };
-        setLocation(newLocation);
-        void fetchForecast(lat, lon, temperatureUnit);
-    };
-
-    // Handle temperature unit change
-    const handleTemperatureToggle = (unit: TemperatureUnit) => {
-        setTemperatureUnit(unit);
-        void fetchForecast(location.lat, location.lon, unit);
-    };
-
-    // Helper function to get unit symbol
     const getUnitSymbol = () => temperatureUnit === 'fahrenheit' ? '°F' : '°C';
 
     const getIconByCode = (code: number | null): string => {
@@ -162,27 +40,25 @@ function App() {
     };
 
     const getDescriptionByCode = (code: number | null): string => {
-        if (code === null) return "Unknown";
-        if (code === 0) return "Clear sky";
-        if (code === 1) return "Mainly clear";
-        if (code === 2) return "Partly cloudy";
-        if (code === 3) return "Overcast";
-        if (code >= 45 && code <= 48) return "Fog";
-        if (code >= 51 && code <= 57) return "Drizzle";
-        if (code >= 61 && code <= 67) return "Rain";
-        if (code >= 71 && code <= 77) return "Snow";
-        if (code >= 80 && code <= 82) return "Showers";
-        if (code >= 95) return "Thunderstorm";
-        return "Unknown";
+        if (code === null) return 'Unknown';
+        if (code === 0) return 'Clear sky';
+        if (code === 1) return 'Mainly clear';
+        if (code === 2) return 'Partly cloudy';
+        if (code === 3) return 'Overcast';
+        if (code >= 45 && code <= 48) return 'Fog';
+        if (code >= 51 && code <= 57) return 'Drizzle';
+        if (code >= 61 && code <= 67) return 'Rain';
+        if (code >= 71 && code <= 77) return 'Snow';
+        if (code >= 80 && code <= 82) return 'Showers';
+        if (code >= 95) return 'Thunderstorm';
+        return 'Unknown';
     };
 
     const getForecastCards = () => {
         if (!forecast || forecast.time.length === 0) return null;
 
         return forecast.time.slice(0, 5).map((date, index) => {
-            if (index >= forecast.temperatureMin.length ||
-                index >= forecast.temperatureMax.length ||
-                index >= forecast.weathercode.length) {
+            if (index >= forecast.temperatureMin.length || index >= forecast.temperatureMax.length || index >= forecast.weathercode.length) {
                 return null;
             }
 
@@ -208,13 +84,9 @@ function App() {
     if (loading) {
         return (
             <>
-                <img
-                    className="absolute inset-0 w-full h-screen object-cover -z-10 bg-cover bg-center"
-                    src={bg}
-                    alt="Weather background"
-                />
+                <img className="absolute inset-0 w-full h-screen object-cover -z-10 bg-cover bg-center" src={bg} alt="Weather background" />
                 <div className="min-h-screen flex items-center justify-center">
-                    <div className="text-white text-xl regular">Loading weather data...</div>
+                    <div className="regular text-white">Loading weather data...</div>
                 </div>
             </>
         );
@@ -223,13 +95,9 @@ function App() {
     if (error) {
         return (
             <>
-                <img
-                    className="absolute inset-0 w-full h-screen object-cover -z-10 bg-cover bg-center"
-                    src={bg}
-                    alt="Weather background"
-                />
+                <img className="absolute inset-0 w-full h-screen object-cover -z-10 bg-cover bg-center" src={bg} alt="Weather background" />
                 <div className="min-h-screen flex items-center justify-center">
-                    <div className="text-red-500 text-xl regular">{error}</div>
+                    <div className="text-red-500 text-xl font-normal">{error}</div>
                 </div>
             </>
         );
@@ -237,56 +105,28 @@ function App() {
 
     return (
         <>
-            <img
-                className="absolute inset-0 w-full h-screen object-cover -z-10 bg-cover bg-center"
-                src={bg}
-                alt="Weather background"
-            />
+            <img className="absolute inset-0 w-full h-screen object-cover -z-10 bg-cover bg-center" src={bg} alt="Weather background" />
 
-            <div className="content text-center regular min-h-screen flex flex-col items-center justify-center px-4">
-                {/* Search Bar */}
+            <div className="content text-center font-normal min-h-screen flex flex-col items-center justify-center px-4">
+                <TemperatureToggle unit={temperatureUnit as TemperatureUnit} onToggle={toggleUnit} disabled={loading} />
 
-                <TemperatureToggle
-                    unit={temperatureUnit}
-                    onToggle={handleTemperatureToggle}
-                    disabled={loading}
-                />
+                <FavoritesManager currentLocation={location} onCitySelect={(lat, lon, name) => setLocation(lat, lon, name)} />
 
-                <FavoritesManager
-                    currentLocation={location}
-                    onCitySelect={handleCitySelect}
-                />
+                <SearchBar onCitySelect={(lat, lon, name) => setLocation(lat, lon, name)} currentCity={location.name} isLoading={loading} />
 
-
-                <SearchBar
-                    onCitySelect={handleCitySelect}
-                    currentCity={location.name}
-                    isLoading={loading}
-                />
-
-
-
-                <div className="card-wrapper w-[340px] sm:w-[480px] flex flex-col bg-[#2e1e12]/70 backdrop-blur-sm rounded-xl shadow-inner-glow border border-[#a36b2b]/40">
-                    <div className="card-header bold p-9 text-[#F8E3B6]">
-                        <div className="today-city text-xs">
-                            {forecast && forecast.time.length > 0 ? format(forecast.time[0], 'PP') : "--"}
-                        </div>
+                <div className="regular card-wrapper w-[340px] sm:w-[480px] flex flex-col bg-[#2e1e12]/70 backdrop-blur-sm rounded-xl shadow-inner border border-[#a36b2b]/40">
+                    <div className="card-header font-bold p-9 text-[#F8E3B6]">
+                        <div className="today-city text-xs">{forecast && forecast.time.length > 0 ? format(forecast.time[0], 'PP') : '--'}</div>
                         <div className="today-city text-2xl text-center">{location.name}</div>
                     </div>
 
                     <div className="card-info p-9 flex items-center justify-between text-[#F8E3B6]">
                         <div className="info-today flex flex-col items-center gap-2">
-
-
                             <div className="today-icon">
                                 <img src={forecast && forecast.weathercode.length > 0 ? getIconByCode(forecast.weathercode[0]) : sun} alt="weather icon" />
                             </div>
-                            <div className="today-temp text-3xl">
-                                {forecast && forecast.temperatureMax.length > 0 ? Math.floor(forecast.temperatureMax[0]) + getUnitSymbol() : "--"}
-                            </div>
-                            <div className="today-style text-xl">
-                                {forecast && forecast.weathercode.length > 0 ? getDescriptionByCode(forecast.weathercode[0]) : "--"}
-                            </div>
+                            <div className="today-temp text-3xl">{forecast && forecast.temperatureMax.length > 0 ? Math.floor(forecast.temperatureMax[0]) + getUnitSymbol() : '--'}</div>
+                            <div className="today-style text-xl">{forecast && forecast.weathercode.length > 0 ? getDescriptionByCode(forecast.weathercode[0]) : '--'}</div>
                         </div>
 
                         <div className="info-five flex flex-col items-center gap-2">
